@@ -62,7 +62,9 @@ allow-direct-references = true
 constraint-dependencies = [
     "onnxruntime<=1.23.2 ; python_version < '3.14'",
     "onnxruntime>=1.24.1 ; python_version >= '3.14'",
-    "fastapi>=0.115.0"
+    "fastapi>=0.115.0",
+    "llvmlite>=0.42.0",
+    "numba>=0.59.0"
 ]
 
 
