@@ -1108,23 +1108,41 @@ async def remember(
     dataset_name = dataset_name or _agent_scoped_default_dataset()
     with redirect_stdout(sys.stderr):
         try:
-            result = await cognee_client.remember(
-                data=data,
-                dataset_name=dataset_name,
-                session_id=session_id,
-                custom_prompt=custom_prompt,
-            )
-            status = result.get("status", "completed")
             if session_id:
+                # Modo sesión: rápido, sin pipeline
+                result = await cognee_client.remember(
+                    data=data,
+                    dataset_name=dataset_name,
+                    session_id=session_id,
+                    custom_prompt=custom_prompt,
+                )
+                status = result.get("status", "completed")
                 text = f"Stored in session cache (session_id={session_id}, status={status})."
             else:
-                text = f"Stored permanently in knowledge graph (dataset={dataset_name}, status={status})."
+                # Modo permanente: lanzar en background y responder inmediatamente
+                async def _remember_bg():
+                    try:
+                        await cognee_client.remember(
+                            data=data,
+                            dataset_name=dataset_name,
+                            session_id=None,
+                            custom_prompt=custom_prompt,
+                        )
+                    except Exception as e:
+                        _record_task_error(dataset_name, str(e))
+                        logger.error(f"Background remember failed: {e}")
+
+                _track_background(_remember_bg())
+                text = (
+                    f"Memory storage initiated in background "
+                    f"(dataset={dataset_name}). "
+                    f"Use recall to verify once processing completes (~30-60s)."
+                )
             return [types.TextContent(type="text", text=text)]
         except Exception as e:
             error_msg = f"Remember failed: {str(e)}"
             logger.error(error_msg)
             return [types.TextContent(type="text", text=f"Error: {error_msg}")]
-
 
 @mcp.tool()
 @log_usage(function_name="MCP recall", log_type="mcp_tool")
