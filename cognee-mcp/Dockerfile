@@ -39,7 +39,7 @@ COPY ./cognee-mcp/pyproject.toml ./cognee-mcp/uv.lock ./cognee-mcp/entrypoint.sh
 
 # Install the project's dependencies using the lockfile and settings
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev --no-editable
+    uv sync --no-install-project --no-dev --no-editable
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows layer caching
@@ -52,7 +52,7 @@ COPY ./cognee-mcp /app
 # reads the bundle from its own neighbor directory inside site-packages.
 COPY --from=app-bundle /build/cognee-mcp/src/app_bundles /app/src/app_bundles
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+    uv sync --no-dev --no-editable
 
 FROM python:3.12-slim-bookworm
 
