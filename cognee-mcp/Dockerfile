@@ -64,16 +64,15 @@ WORKDIR /app
 
 # Copy the virtual environment from the uv stage
 COPY --from=uv /usr/local /usr/local
-COPY --from=uv /app /app
-
-# Strip Windows carriage returns (fixes "no such file" on Windows Docker)
-RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
-
-# Run as a non-root user. Create the user before copying ownership so the
-# /app tree (which already exists from the COPY above) is readable.
+# 1. Crear el usuario PRIMERO
 RUN groupadd --system --gid 1000 cognee \
-    && useradd --system --uid 1000 --gid cognee --no-create-home --shell /usr/sbin/nologin cognee \
-    && chown -R cognee:cognee /app
+    && useradd --system --uid 1000 --gid cognee --no-create-home --shell /usr/sbin/nologin cognee
+
+# 2. Copiar los archivos asignando el dueño en un solo paso (Evita el colapso de memoria)
+COPY --chown=cognee:cognee --from=uv /app /app
+
+# 3. Dar permisos de ejecución al script
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
