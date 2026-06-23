@@ -210,6 +210,14 @@ async def health_check(request):
     return JSONResponse({"status": "ok"})
 
 
+@mcp.custom_route("/graph", methods=["GET"])
+async def serve_graph(request):
+    from starlette.responses import HTMLResponse
+    graph_path = Path("/data/graph_visualization.html")
+    if graph_path.exists():
+        return HTMLResponse(graph_path.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>No graph yet. Use remember first.</h1>", status_code=404)
+
 @log_usage(function_name="MCP cognify", log_type="mcp_tool")
 async def cognify(
     data: str,
